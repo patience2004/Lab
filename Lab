@@ -1,0 +1,85 @@
+3
+
+#include <stdio.h>
+#define MAX 100
+
+int stack[MAX];
+int top = -1;
+
+void push(int element) {
+    if (top == MAX - 1) {
+        printf("Stack Overflow\n");
+    } else {
+        stack[++top] = element;
+        printf("Element %d pushed onto the stack\n", element);
+    }
+}
+
+int pop() {
+    if (top == -1) {
+        printf("Stack Underflow\n");
+        return -1;
+    } else {
+        int element = stack[top--];
+        printf("Element %d popped from the stack\n", element);
+        return element;
+    }
+}
+
+void display() {
+    if (top == -1) {
+        printf("Stack is empty\n");
+    } else {
+        printf("Elements in the stack: ");
+        for (int i = top; i >= 0; i--) {
+            printf("%d ", stack[i]);
+        }
+        printf("\n");
+    }
+}
+
+int isPalindrome(char str[]) {
+    int i = 0;
+    int j = top;
+    while (i < j) {
+        if (str[i] != stack[j]) {
+            return 0;
+        }
+        i++;
+        j--;
+    }
+    return 1;
+}
+
+int main() {
+    int choice, element;
+    char str[MAX];
+    
+    do {
+        printf("\n--- MENU ---\n");
+        printf("1. Push an element onto the stack\n");
+        printf("2. Pop an element from the stack\n");
+        printf("3. Check if a string is a palindrome using the stack\n");
+        printf("4. Display the status of the stack\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        
+        switch (choice) {
+            case 1:
+                printf("Enter the element to push: ");
+                scanf("%d", &element);
+                push(element);
+                break;
+            case 2:
+                pop();
+                break;
+            case 3:
+                printf("Enter a string: ");
+                scanf("%s", str);
+                for (int i = 0; str[i] != '\0'; i++) {
+                    push(str[i]);
+                }
+                if (isPalindrome(str)) {
+                    printf("%s is a palindrome\n", str);
+                } else {
