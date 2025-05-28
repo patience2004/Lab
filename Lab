@@ -1,2 +1,35 @@
+lab 1 ---
+import gensim.downloader as api
+
+import numpy as np
+
+# Load pre-trained GloVe embeddings (100d)
+
+word_vectors = api.load('glove-wiki-gigaword-100') # ~130MB
+
+print(f"Vocabulary size: {len(word_vectors.index_to_key)}")
+
+# King - Man + Woman = ?
+
+result = word_vectors.most_similar(positive=['king', 'woman'], negative=['man'], topn=5)
+
+for word, similarity in result:
+
+ print(f"{word}: {similarity:.4f}")
+
+# Similar words to "computer"
+
+print(word_vectors.most_similar('computer', topn=5))
+
+# Odd one out
+
+print(word_vectors.doesnt_match("breakfast lunch dinner banana".split()))
+
+# Word similarity
+
+print(word_vectors.similarity('king', 'queen'))
+
+
+
 
 
