@@ -1,55 +1,240 @@
-MACHINE LEARNINGG LAB ===
+generative AI
 
-1=== import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.datasets import fetch_california_housing
+lab 6===
+from transformers import pipeline
 
-# Step 1: Load the California Housing dataset
-data = fetch_california_housing(as_frame=True)
-housing_df = data.frame  # FIXED: should be data.frame, not data.data
+# Load the sentiment-analysis pipeline
+sentiment_pipeline = pipeline("sentiment-analysis")
 
-# Step 2: Create histograms for numerical features
-numerical_features = housing_df.select_dtypes(include=[np.number]).columns
+# Example feedback sentences (real-world inputs)
+reviews = [
+    "The product quality is amazing!",
+    "I received the item.",
+    "Customer service was terrible.",
+    "I'm extremely satisfied with the delivery speed.",
+    "The item broke after two days, very disappointed.",
+    "Great value for money. Will buy again!"
+]
 
-# Plot histograms
-plt.figure(figsize=(15, 10))
-for i, feature in enumerate(numerical_features):
-    plt.subplot(3, 3, i + 1)
-    sns.histplot(housing_df[feature], kde=True, bins=30, color='blue')
-    plt.title(f'Distribution of {feature}')
-plt.tight_layout()
-plt.show()
-
-# Step 3: Generate box plots for numerical features
-plt.figure(figsize=(15, 10))
-for i, feature in enumerate(numerical_features):
-    plt.subplot(3, 3, i + 1)
-    sns.boxplot(x=housing_df[feature], color='orange')
-    plt.title(f'Box Plot of {feature}')
-plt.tight_layout()
-plt.show()
-
-# Step 4: Identify outliers using the IQR method
-print("Outliers Detection:")
-outliers_summary = {}
-for feature in numerical_features:
-    Q1 = housing_df[feature].quantile(0.25)
-    Q3 = housing_df[feature].quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-    outliers = housing_df[(housing_df[feature] < lower_bound) | (housing_df[feature] > upper_bound)]
-    outliers_summary[feature] = len(outliers)
-    print(f"{feature}: {len(outliers)} outliers")
-
-# Print a summary of the dataset
-print("\nDataset Summary:")
-print(housing_df.describe())
+# Analyze sentiment for each review
+for review in reviews:
+    result = sentiment_pipeline(review)[0] # returns a list with one dict
+    print(f"Review: \"{review}\"\n → Sentiment: {result['label']}, Score: {result['score']:.4f}\n")
 
 
 
+lab 7 ===
+# Step 1: Import the Hugging Face pipeline
+from transformers import pipeline
+# Step 2: Load the summarization pipeline
+summarizer = pipeline("summarization")
+# Step 3: Input a long passage for summarization
+long_text = """
+Artificial Intelligence (AI) is transforming various industries by automating tasks, improving
+efficiency,
+and enabling new capabilities. In the healthcare sector, AI is used for disease diagnosis,
+personalized medicine,
+and drug discovery. In the business world, AI-powered systems are optimizing customer
+service, fraud detection,
+and supply chain management. AI's impact on everyday life is significant, from smart
+assistants to recommendation
+systems in streaming platforms. As AI continues to evolve, it promises even greater
+advancements in fields like
+education, transportation, and environmental sustainability.
+"""
+# Step 4: Summarize the input passage
+summary = summarizer(long_text, max_length=50, min_length=20,
+do_sample=False)[0]["summary_text"]
+# Step 5: Print the summarized text
+print("Summarized Text:")
+print(summary)
+
+
+
+
+lab 8 ===
+# Step 1: Install necessary libraries
+!pip install langchain cohere langchain-community
+# Step 2: Import the required modules
+from langchain.llms import Cohere
+from langchain.prompts import PromptTemplate
+from langchain import LLMChain
+from google.colab import drive
+# Step 3: Mount Google Drive to access the document
+drive.mount('/content/drive')
+# Step 4: Load the text document from Google Drive
+file_path = "/content/drive/MyDrive/crow.txt" # Change this path to your file location
+# https://drive.google.com/drive/my-drive
+with open(file_path, "r") as file:
+ text = file.read()
+# Step 5: Set up Cohere API key
+cohere_api_key = "xNBCmAElkHo9M2tjr6d3SLP80NbMt8MofoUMsREE"
+# Step 6: Create a prompt template
+prompt_template = """
+Summarize the following text in two bullet points:
+{text}
+"""
+# Step 7: Configure the Cohere model with Langchain
+llm = Cohere(cohere_api_key=cohere_api_key)
+prompt = PromptTemplate(input_variables=["text"], template=prompt_template)
+# Step 8: Create an LLMChain with the Cohere model and prompt template
+chain = LLMChain(llm=llm, prompt=prompt)
+# Step 9: Run the chain on the loaded text
+
+result = chain.run(text)
+print(text)
+# Step 10: Display the formatted output
+print("Summarized Output in Bullet Points:")
+print(result)
+
+
+
+
+lab 9 ===
+
+!pip install wikipedia-api
+ Install required packages if not already installed:
+# pip install langchain pydantic wikipedia-api langchain-core cohere langchain-community
+
+from langchain_community.llms import Cohere
+from langchain.prompts import PromptTemplate
+from langchain_core.runnables import RunnableLambda
+from pydantic import BaseModel
+import wikipediaapi
+
+# Schema for structured output
+class InstitutionDetails(BaseModel):
+    founder: str
+    founded: str
+    branches: str
+    employees: str
+    summary: str
+
+# Limit wiki text to ~3000 characters (safe under token limit)
+def fetch_wikipedia_summary(institution_name, max_chars=3000):
+    wiki = wikipediaapi.Wikipedia(
+        language='en',
+        user_agent='InstitutionInfoBot/1.0 (https://www.wikipedia.org/)'
+    )
+    page = wiki.page(institution_name)
+    if not page.exists():
+        return "No information available."
+    return page.text[:max_chars]  # truncate long text
+
+# Prompt template
+prompt_template = """
+Extract the following information from the given text:
+- Founder
+- Founded (year)
+- Current branches
+- Number of employees
+- 4-line brief summary
+Text: {text}
+Format:
+Founder: <founder>
+Founded: <founded>
+Branches: <branches>
+Employees: <employees>
+Summary: <summary>
+"""
+
+# Main logic
+if __name__ == "__main__":
+    institution_name = input("Enter the name of the institution: ")
+    wiki_text = fetch_wikipedia_summary(institution_name)
+    api_key=input("paste you api key")
+    # Replace with your actual Cohere key
+    llm = Cohere(cohere_api_key=api_key)
+
+    prompt = PromptTemplate.from_template(prompt_template)
+    chain = prompt | llm  # piping prompt into model
+
+    # Get LLM response
+    response = chain.invoke({"text": wiki_text})
+
+    try:
+        lines = response.strip().split('\n')
+        info = {
+            line.split(':')[0].lower(): ':'.join(line.split(':')[1:]).strip()
+            for line in lines if ':' in line
+        }
+
+        details = InstitutionDetails(
+            founder=info.get("founder", "N/A"),
+            founded=info.get("founded", "N/A"),
+            branches=info.get("branches", "N/A"),
+            employees=info.get("employees", "N/A"),
+            summary=info.get("summary", "N/A")
+        )
+
+        print("\nInstitution Details:")
+        print(f"Founder: {details.founder}")
+        print(f"Founded: {details.founded}")
+        print(f"Branches: {details.branches}")
+        print(f"Employees: {details.employees}")
+        print(f"Summary: {details.summary}")
+
+    except Exception as e:
+        print("Error parsing response:", e)
+
+
+lab 10 ===
+!pip install langchain cohere langchain-community pypdf
+!pip install faiss-cpu
+
+ Make sure to install necessary packages
+# !pip install langchain cohere kagglehub pandas
+
+import os
+import kagglehub
+import pandas as pd
+from langchain_community.llms import Cohere
+from langchain.vectorstores import FAISS
+from langchain.embeddings import CohereEmbeddings
+from langchain.docstore.document import Document
+from langchain.chains import RetrievalQA
+
+# Step 1: Get Cohere API key from user
+cohere_api_key = input("Enter your Cohere API key: ").strip()
+
+# Step 2: Download dataset from KaggleHub
+dataset_path = kagglehub.dataset_download("dev523/indian-penal-code-ipc-sections-information")
+print("Downloaded dataset at:", dataset_path)
+
+# Step 3: Read dataset using pandas
+csv_file = os.path.join(dataset_path, "ipc_sections.csv")  # Replace with actual file if different
+df = pd.read_csv(csv_file)
+
+# Combine all rows into one text block (or create multiple documents if preferred)
+documents = []
+for _, row in df.iterrows():
+    section_text = f"Section: {row.get('Section', '')}\nTitle: {row.get('Title', '')}\nDescription: {row.get('Description', '')}"
+    documents.append(Document(page_content=section_text))
+
+# Step 4: Initialize Cohere embeddings
+embeddings = CohereEmbeddings(
+    cohere_api_key=cohere_api_key,
+    user_agent="ipc_qa_bot/1.0"
+)
+
+# Step 5: Create vector store
+vectorstore = FAISS.from_documents(documents, embeddings)
+
+# Step 6: Initialize Cohere LLM
+llm = Cohere(cohere_api_key=cohere_api_key, model="command")  # Use "command" for free-tier
+
+# Step 7: Create the RetrievalQA chain
+qa_chain = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever())
+
+# Step 8: Chat loop
+print("\nAsk questions about the Indian Penal Code (type 'exit' to quit):")
+while True:
+    query = input("Question: ")
+    if query.lower() == "exit":
+        print("Goodbye!")
+        break
+    response = qa_chain.run(query)
+    print(f"Answer: {response}\n")
 
 
 
